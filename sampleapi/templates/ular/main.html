@@ -1,0 +1,179 @@
+{# ular/main.html #}
+{% extends "ular/base.html" %}
+
+
+{% block content %}
+    <p>Ular</p>
+    
+    <br/>
+    <p>api/ular/createroom</p>
+    <form>
+        <input type="text" id="playercreateroom" placeholder="player" />
+        <input type="text" id="colorcreateroom" placeholder="color" />
+        <button type="button" onclick="createroom()">Submit</button>
+    </form>
+    <pre id="outputcreateroom"></pre>
+    <br/>
+    <br/>
+    <p>api/ular/joinroom</p>
+    <form>
+        <input type="text" id="codejoinroom" placeholder="code" />
+        <input type="text" id="playerjoinroom" placeholder="player" />
+        <input type="text" id="colorjoinroom" placeholder="color" />
+        <button type="button" onclick="joinroom()">Submit</button>
+    </form>
+    <pre id="outputjoinroom"></pre>
+    <br/>
+    <br/>
+    <p>api/ular/state</p>
+    <form>
+        <input type="text" id="codestate" placeholder="code" />
+        <button type="button" onclick="state()">Submit</button>
+    </form>
+    <pre id="outputstate"></pre>
+    <br/>
+    <br/>
+    <p>api/ular/startgame</p>
+    <form>
+        <input type="text" id="codestartgame" placeholder="code" />
+        <button type="button" onclick="startgame()">Submit</button>
+    </form>
+    <pre id="outputstartgame"></pre>
+    <br/>
+    <br/>
+    <p>api/ular/rolldice</p>
+    <form>
+        <input type="text" id="coderolldice" placeholder="code" />
+        <input type="text" id="playerrolldice" placeholder="player" />
+        <button type="button" onclick="rolldice()">Submit</button>
+    </form>
+    <pre id="outputrolldice"></pre>
+    <br/>
+    <br/>
+    <p>api/ular/submitanswer</p>
+    <form>
+        <input type="text" id="codesubmitanswer" placeholder="code" />
+        <input type="text" id="playersubmitanswer" placeholder="player" />
+        <input type="text" id="answersubmitanswer" placeholder="answer" />
+        <button type="button" onclick="submitanswer()">Submit</button>
+    </form>
+    <pre id="outputsubmitanswer"></pre>
+    <script>
+        
+        function createroom() {
+            const player = document.getElementById("playercreateroom").value;
+            const color = document.getElementById("colorcreateroom").value;
+            const outputcreateroom = document.getElementById("outputcreateroom");
+            outputcreateroom.innerHTML = "Creating room...";
+            fetch(`/api/ular/createroom?player=${encodeURIComponent(player)}&color=${encodeURIComponent(color)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(response => response.json()).then(data => {
+                outputcreateroom.innerHTML = JSON.stringify(data, null, 2);
+            }).catch(error => {
+                outputcreateroom.innerHTML = "Error: " + error;
+            });
+        }
+
+        function joinroom() {
+            const code = document.getElementById("codejoinroom").value;
+            const player = document.getElementById("playerjoinroom").value;
+            const color = document.getElementById("colorjoinroom").value;
+            const outputjoinroom = document.getElementById("outputjoinroom");
+            outputjoinroom.innerHTML = "Joining room...";
+            fetch(`/api/ular/joinroom?code=${encodeURIComponent(code)}&player=${encodeURIComponent(player)}&color=${encodeURIComponent(color)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(response => response.json()).then(data => {
+                outputjoinroom.innerHTML = JSON.stringify(data, null, 2);
+            }).catch(error => {
+                outputjoinroom.innerHTML = "Error: " + error;
+            });
+        }
+
+        function state() {
+            const code = document.getElementById("codestate").value;
+            const outputstate = document.getElementById("outputstate");
+            outputstate.innerHTML = "Getting state...";
+            fetch(`/api/ular/state?code=${encodeURIComponent(code)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(response => response.json()).then(data => {
+                outputstate.innerHTML = JSON.stringify(data, null, 2);
+            }).catch(error => {
+                outputstate.innerHTML = "Error: " + error;
+            });
+        }
+
+        function startgame() {
+            const code = document.getElementById("codestartgame").value;
+            const outputstartgame = document.getElementById("outputstartgame");
+            outputstartgame.innerHTML = "Starting game...";
+            fetch(`/api/ular/startgame?code=${encodeURIComponent(code)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(response => response.json()).then(data => {
+                outputstartgame.innerHTML = JSON.stringify(data, null, 2);
+            }).catch(error => {
+                outputstartgame.innerHTML = "Error: " + error;
+            });
+        }
+
+        function rolldice() {
+            const code = document.getElementById("coderolldice").value;
+            const player = document.getElementById("playerrolldice").value;
+            const outputrolldice = document.getElementById("outputrolldice");
+            outputrolldice.innerHTML = "Rolling dice...";
+            fetch(`/api/ular/rolldice?code=${encodeURIComponent(code)}&player=${encodeURIComponent(player)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(response => response.json()).then(data => {
+                outputrolldice.innerHTML = JSON.stringify(data, null, 2);
+            }).catch(error => {
+                outputrolldice.innerHTML = "Error: " + error;
+            });
+        }
+
+        function submitanswer() {
+            const code = document.getElementById("codesubmitanswer").value;
+            const player = document.getElementById("playersubmitanswer").value;
+            const answer = document.getElementById("answersubmitanswer").value;
+            const output = document.getElementById("outputsubmitanswer");
+            output.innerHTML = "Submitting answer...";
+            fetch(`/api/ular/submitanswer?code=${encodeURIComponent(code)}&player=${encodeURIComponent(player)}&answer=${encodeURIComponent(answer)}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(response => response.json()).then(data => {
+                output.innerHTML = JSON.stringify(data, null, 2);
+            }).catch(error => {
+                output.innerHTML = "Error: " + error;
+            });
+        }
+
+        function reset() {
+            const outputcreateroom = document.getElementById("outputcreateroom");
+            outputcreateroom.innerHTML = "";
+            const outputjoinroom = document.getElementById("outputjoinroom");
+            outputjoinroom.innerHTML = "";
+            const outputstate = document.getElementById("outputstate");
+            outputstate.innerHTML = "";
+            const outputstartgame = document.getElementById("outputstartgame");
+            outputstartgame.innerHTML = "";
+            const outputrolldice = document.getElementById("outputrolldice");
+            outputrolldice.innerHTML = "";
+        }
+    </script>
+    
+{% endblock %}
