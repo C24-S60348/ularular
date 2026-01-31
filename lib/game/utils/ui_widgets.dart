@@ -1,5 +1,47 @@
 import 'package:flutter/material.dart';
 
+/// Game design dimensions
+const double kGameWidth = 1000;
+const double kGameHeight = 600;
+
+/// Wraps a page with responsive scaling and black padding
+/// [child] - The page widget to wrap
+Widget buildResponsiveGamePage({required Widget child}) {
+  return Scaffold(
+    backgroundColor: Colors.black,
+    body: LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+        final screenHeight = constraints.maxHeight;
+
+        // Calculate scale to fit the game in the screen
+        final scaleX = screenWidth / kGameWidth;
+        final scaleY = screenHeight / kGameHeight;
+        final scale = scaleX < scaleY ? scaleX : scaleY;
+
+        // Calculate the actual size after scaling
+        final scaledWidth = kGameWidth * scale;
+        final scaledHeight = kGameHeight * scale;
+
+        return Center(
+          child: SizedBox(
+            width: scaledWidth,
+            height: scaledHeight,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: SizedBox(
+                width: kGameWidth,
+                height: kGameHeight,
+                child: child,
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
 /// Creates a positioned back button at top left
 /// [onTap] - Optional custom onTap handler. If null, uses Navigator.pop(context)
 Widget buildBackButton(BuildContext context, {VoidCallback? onTap}) {
@@ -20,6 +62,7 @@ Widget buildBackButton(BuildContext context, {VoidCallback? onTap}) {
 }
 
 /// Creates a slide transition route to navigate to a new page
+/// Automatically wraps the page with responsive scaling
 /// [page] - The page widget to navigate to
 /// [direction] - The slide direction (default: left to right)
 Route createSlideRoute(Widget page, {SlideDirection direction = SlideDirection.leftToRight}) {
@@ -40,8 +83,11 @@ Route createSlideRoute(Widget page, {SlideDirection direction = SlideDirection.l
       break;
   }
   
+  // Wrap the page with responsive scaling
+  final wrappedPage = buildResponsiveGamePage(child: page);
+  
   return PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => page,
+    pageBuilder: (context, animation, secondaryAnimation) => wrappedPage,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       const curve = Curves.easeInOut;
       

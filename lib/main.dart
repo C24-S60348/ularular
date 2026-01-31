@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game/views/main_menu_page.dart';
+import 'game/utils/ui_widgets.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,13 +27,13 @@ class GameApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ularular',
+      title: 'Ular Ular',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      home: const MainMenuPage(),
+      home: buildResponsiveGamePage(child: const MainMenuPage()),
     );
   }
 }

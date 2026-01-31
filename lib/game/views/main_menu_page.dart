@@ -9,10 +9,9 @@ class MainMenuPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: 1280,
-        height: 600,
+    return Container(
+      width: 1280,
+      height: 600,
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/backgroundsplashscreen.png'),
@@ -103,7 +102,6 @@ class MainMenuPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

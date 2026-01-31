@@ -87,10 +87,9 @@ class _CreateRoomFormPageState extends State<CreateRoomFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: 1280,
-        height: 600,
+    return Container(
+      width: 1280,
+      height: 600,
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/backgroundsplashscreen.png'),
@@ -122,21 +121,21 @@ class _CreateRoomFormPageState extends State<CreateRoomFormPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'Create Room',
+                        'CREATE ROOM',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: Color.fromARGB(255, 19, 128, 218),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       // Show selected color
                       Image.asset(
                         'assets/images/${widget.colorImage}',
                         height: 80,
                         fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
                       // Player Name input
                       TextField(
                         controller: _playerNameController,
@@ -221,7 +220,6 @@ class _CreateRoomFormPageState extends State<CreateRoomFormPage> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

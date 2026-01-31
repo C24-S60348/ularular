@@ -1,12 +1,12 @@
 {
-    "name": "Celik Tafsir",
-    "short_name": "Celik Tafsir",
+    "name": "Ular Ular",
+    "short_name": "Ular Ular",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "Celik Tafsir",
-    "orientation": "portrait-primary",
+    "background_color": "#4CAF50",
+    "theme_color": "#4CAF50",
+    "description": "Ular Ular - Educational Snakes and Ladders Game",
+    "orientation": "landscape-primary",
     "prefer_related_applications": false,
     "icons": [
         {

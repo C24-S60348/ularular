@@ -25,10 +25,9 @@ class ColorSelectionPage extends StatelessWidget {
       'player grey.png',
     ];
 
-    return Scaffold(
-      body: Container(
-        width: 1280,
-        height: 600,
+    return Container(
+      width: 1280,
+      height: 600,
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/backgroundpilihwarna.png'),
@@ -100,7 +99,6 @@ class ColorSelectionPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

@@ -88,10 +88,9 @@ class _JoinRoomFormPageState extends State<JoinRoomFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: 1280,
-        height: 600,
+    return Container(
+      width: 1280,
+      height: 600,
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/backgroundsplashscreen.png'),
@@ -123,21 +122,21 @@ class _JoinRoomFormPageState extends State<JoinRoomFormPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'Join Room',
+                        'JOIN ROOM',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: Color.fromARGB(255, 19, 128, 218),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       // Show selected color
                       Image.asset(
                         'assets/images/${widget.colorImage}',
                         height: 80,
                         fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
                       // Room Code input
                       TextField(
                         controller: _roomCodeController,
@@ -150,7 +149,8 @@ class _JoinRoomFormPageState extends State<JoinRoomFormPage> {
                         textCapitalization: TextCapitalization.characters,
                         maxLength: 4,
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
+                          UpperCaseTextFormatter(),
+                          FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -215,7 +215,20 @@ class _JoinRoomFormPageState extends State<JoinRoomFormPage> {
             ),
           ],
         ),
-      ),
+      );
+  }
+}
+
+/// Text input formatter that converts all text to uppercase
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }
