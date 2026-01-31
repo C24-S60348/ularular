@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'create_join_page.dart';
+import 'game_mode_selection_page.dart';
 import 'about_us_page.dart';
 import '../utils/animated_widgets.dart';
 
@@ -22,12 +22,12 @@ class MainMenuPage extends StatelessWidget {
           children: [
             // Logo at center-top
             Positioned(
-              top: 80,
+              top: 110,
               left: 0,
               right: 0,
               child: Center(
                 child: buildPulsingWidget(
-                  maxScale: 1.1,
+                  maxScale: 1.05,
                   minScale: 0.95,
                   duration: const Duration(milliseconds: 2000),
                   child: Image.asset(
@@ -38,9 +38,27 @@ class MainMenuPage extends StatelessWidget {
                 ),
               ),
             ),
+            //Ular Ular text at center-top
+            Positioned(
+              top: 60,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: buildPulsingWidget(
+                  maxScale: 1.0,
+                  minScale: 0.98,
+                  duration: const Duration(milliseconds: 2000),
+                  child: Image.asset(
+                    'assets/images/snake snake text malay.png',
+                    height: 70,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
             // PLAY button at center-bottom
             Positioned(
-              bottom: 80,
+              bottom: 40,
               left: 0,
               right: 0,
               child: Center(
@@ -53,12 +71,12 @@ class MainMenuPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const CreateJoinPage(),
+                          builder: (context) => const GameModeSelectionPage(),
                         ),
                       );
                     },
                     child: Image.asset(
-                      'assets/images/play button.png',
+                      'assets/images/play text malay.png',
                       height: 80,
                       fit: BoxFit.contain,
                     ),
@@ -80,7 +98,7 @@ class MainMenuPage extends StatelessWidget {
                   );
                 },
                 child: Image.asset(
-                  'assets/images/about us button.png',
+                  'assets/images/about us malay.png',
                   height: 50,
                   fit: BoxFit.contain,
                 ),

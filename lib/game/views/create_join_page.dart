@@ -4,7 +4,9 @@ import '../services/game_api_service.dart';
 import 'game_board_page.dart';
 
 class CreateJoinPage extends StatefulWidget {
-  const CreateJoinPage({super.key});
+  final int initialTab;
+  
+  const CreateJoinPage({super.key, this.initialTab = 0});
 
   @override
   State<CreateJoinPage> createState() => _CreateJoinPageState();
@@ -54,7 +56,7 @@ class _CreateJoinPageState extends State<CreateJoinPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTab);
   }
 
   @override
