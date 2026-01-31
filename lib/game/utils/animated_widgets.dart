@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 /// Creates a pulsing animation widget
 /// [child] - The widget to animate
@@ -75,6 +76,89 @@ class _PulsingWidgetState extends State<PulsingWidget>
       builder: (context, child) {
         return Transform.scale(
           scale: _animation.value,
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+/// Creates a floating rotation animation widget
+/// [child] - The widget to animate
+/// [minAngle] - Minimum rotation angle in degrees (e.g., -5)
+/// [maxAngle] - Maximum rotation angle in degrees (e.g., 5)
+/// [duration] - Duration of one complete rotation cycle
+Widget buildFloatingWidget({
+  required Widget child,
+  double minAngle = -5.0,
+  double maxAngle = 5.0,
+  Duration duration = const Duration(milliseconds: 2000),
+}) {
+  return FloatingWidget(
+    minAngle: minAngle,
+    maxAngle: maxAngle,
+    duration: duration,
+    child: child,
+  );
+}
+
+class FloatingWidget extends StatefulWidget {
+  final Widget child;
+  final double minAngle;
+  final double maxAngle;
+  final Duration duration;
+
+  const FloatingWidget({
+    super.key,
+    required this.child,
+    this.minAngle = -5.0,
+    this.maxAngle = 5.0,
+    this.duration = const Duration(milliseconds: 2000),
+  });
+
+  @override
+  State<FloatingWidget> createState() => _FloatingWidgetState();
+}
+
+class _FloatingWidgetState extends State<FloatingWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: widget.duration,
+      vsync: this,
+    );
+
+    _animation = Tween<double>(
+      begin: widget.minAngle,
+      end: widget.maxAngle,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+
+    // Repeat the animation back and forth continuously
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.rotate(
+          angle: _animation.value * math.pi / 180, // Convert degrees to radians
           child: child,
         );
       },

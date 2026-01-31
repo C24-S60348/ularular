@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'create_join_page.dart';
+import 'color_selection_page.dart';
+import '../utils/ui_widgets.dart';
 
 class GameModeSelectionPage extends StatelessWidget {
   const GameModeSelectionPage({super.key});
@@ -19,20 +20,7 @@ class GameModeSelectionPage extends StatelessWidget {
         child: Stack(
           children: [
             // Back button at top left
-            Positioned(
-              top: 20,
-              left: 20,
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: Image.asset(
-                  'assets/images/back button.png',
-                  height: 70,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
+            buildBackButton(context),
             // Center content with buttons
             Center(
               child: Column(
@@ -43,8 +31,10 @@ class GameModeSelectionPage extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateJoinPage(initialTab: 0),
+                        createSlideRoute(
+                          const ColorSelectionPage(
+                            isCreatingRoom: true,
+                          ),
                         ),
                       );
                     },
@@ -60,8 +50,10 @@ class GameModeSelectionPage extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateJoinPage(initialTab: 1),
+                        createSlideRoute(
+                          const ColorSelectionPage(
+                            isCreatingRoom: false,
+                          ),
                         ),
                       );
                     },

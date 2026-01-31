@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'game_mode_selection_page.dart';
 import 'about_us_page.dart';
 import '../utils/animated_widgets.dart';
+import '../utils/ui_widgets.dart';
 
 class MainMenuPage extends StatelessWidget {
   const MainMenuPage({super.key});
@@ -70,9 +71,7 @@ class MainMenuPage extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const GameModeSelectionPage(),
-                        ),
+                        createSlideRoute(const GameModeSelectionPage()),
                       );
                     },
                     child: Image.asset(
@@ -92,9 +91,7 @@ class MainMenuPage extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const AboutUsPage(),
-                    ),
+                    createSlideRoute(const AboutUsPage()),
                   );
                 },
                 child: Image.asset(
