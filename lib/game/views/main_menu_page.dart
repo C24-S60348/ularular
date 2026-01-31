@@ -58,7 +58,7 @@ class MainMenuPage extends StatelessWidget {
             ),
             // PLAY button at center-bottom
             Positioned(
-              bottom: 40,
+              bottom: 80,
               left: 0,
               right: 0,
               child: Center(

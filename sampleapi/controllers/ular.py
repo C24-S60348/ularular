@@ -1,7 +1,7 @@
 #controllers/ular.py
 from flask import jsonify, request, Blueprint, render_template, render_template_string
 from ..utils.html_helper import *
-from ..utils.csv_helper import *
+# from ..utils.csv_helper import *
 from ..models.ular import *
 
 ular_blueprint = Blueprint('ular', __name__)
@@ -40,63 +40,121 @@ def cellsget():
     return {
         "cells":
         [
-            { "x": -10,"y": 110 
+            { #0
+                "x": -10,
+                "y": 110 
             },
-            { "x": 0*size,"y": 3*size
+            { #1
+                "x": 0*size,
+                "y": 3*size
             },
-            {"x": 1*size,"y": 3*size
+            {
+                "x": 1*size,
+                "y": 3*size
             },
-            {"x": 2*size,"y": 3*size
+            {
+                "x": 2*size,
+                "y": 3*size
             },
-            {"x": 3*size,"y": 3*size
+            {
+                "x": 3*size,
+                "y": 3*size
             },
-            {"x": 4*size,"y": 3*size
+            {
+                "x": 4*size,
+                "y": 3*size
             },
-            {"x": 5*size,"y": 3*size
+            {
+                "x": 5*size,
+                "y": 3*size
             },
-            {"x": 6*size,"y": 3*size
+            {
+                "x": 6*size,
+                "y": 3*size
             },
-            { "x": 6*size,"y": 2*size
+            { #8
+                "x": 6*size,
+                "y": 2*size
             },
-            { "x": 5*size,"y": 2*size
+            { 
+                "x": 5*size,
+                "y": 2*size
             },
-            { "x": 4*size,"y": 2*size
+            { 
+                "x": 4*size,
+                "y": 2*size
             },
-            { "x": 3*size,"y": 2*size
+            { 
+                "x": 3*size,
+                "y": 2*size
             },
-            { "x": 2*size,"y": 2*size
+            { 
+                "x": 2*size,
+                "y": 2*size
             },
-            { "x": 1*size,"y": 2*size
+            { 
+                "x": 1*size,
+                "y": 2*size
             },
-            { "x": 0*size,"y": 2*size
+            { 
+                "x": 0*size,
+                "y": 2*size
             },
-            { "x": 0*size,"y": 1*size
+            { #15
+                "x": 0*size,
+                "y": 1*size
             },
-            { "x": 1*size,"y": 1*size
+            { 
+                "x": 1*size,
+                "y": 1*size
             },
-            { "x": 2*size,"y": 1*size
+            { 
+                "x": 2*size,
+                "y": 1*size
             },
-            { "x": 3*size,"y": 1*size
+            { 
+                "x": 3*size,
+                "y": 1*size
             },
-            { "x": 4*size,"y": 1*size
+            { 
+                "x": 4*size,
+                "y": 1*size
             },
-            { "x": 5*size,"y": 1*size
+            { 
+                "x": 5*size,
+                "y": 1*size
             },
-            { "x": 6*size,"y": 1*size
+            { 
+                "x": 6*size,
+                "y": 1*size
             },
-            { "x": 6*size,"y": 0*size
+            { #22
+                "x": 6*size,
+                "y": 0*size
             },
-            { "x": 5*size,"y": 0*size
+            { 
+                "x": 5*size,
+                "y": 0*size
             },
-            { "x": 4*size,"y": 0*size
+            { 
+                "x": 4*size,
+                "y": 0*size
             },
-            { "x": 3*size,"y": 0*size
+            { 
+                "x": 3*size,
+                "y": 0*size
             },
-            { "x": 2*size,"y": 0*size
+            { 
+                "x": 2*size,
+                "y": 0*size
             },
-            { "x": 1*size,"y": 0*size
+            { 
+                "x": 1*size,
+                "y": 0*size
             },
-            { "x": 0*size,"y": 0*size
+            { 
+                "x": 0*size,
+                "y": 0*size
             },
         ],
         "gaps": gaps
@@ -283,6 +341,7 @@ def apiular_state():
     rturn = rdata["turn"]
     rquestionid = rdata["questionid"]
     rmaxbox = int(rdata["maxbox"])
+    rdice = int(rdata.get("dice", 0))  # Get last dice rolled
     question = []
     if rquestionid != "":
         question = getquestion(rquestionid)
@@ -308,7 +367,8 @@ def apiular_state():
             "turn": rturn,
             "question": question,
             "questionid": rquestionid,
-            "state": rstate
+            "state": rstate,
+            "dice": rdice
         })
     else:
         return jsonify({
@@ -367,9 +427,9 @@ def apiular_rolldice():
 
                 else:
                     if rdice["question"] == []:
-                        message = f"Roll dice: {rdice["dice"]}, Turn now: {rdice["turn"]}"
+                        message = f"Roll dice: {rdice['dice']}, Turn now: {rdice['turn']}"
                     else:
-                        message = f"Roll dice: {rdice["dice"]}, Turn now: {rdice["turn"]}, Please answer question"
+                        message = f"Roll dice: {rdice['dice']}, Turn now: {rdice['turn']}, Please answer question"
 
                 return jsonify({
                     "status": "ok",

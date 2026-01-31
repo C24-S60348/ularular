@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flame/game.dart';
 import 'dart:async';
 import '../services/game_api_service.dart';
 import '../models/game_models.dart';
-import '../components/snakes_ladders_game.dart';
+import '../utils/ui_widgets.dart';
+import '../utils/animated_widgets.dart';
 import 'question_page.dart';
-import 'about_us_page.dart';
+import 'main_menu_page.dart';
 
 class GameBoardPage extends StatefulWidget {
   final String gameCode;
@@ -28,15 +28,13 @@ class _GameBoardPageState extends State<GameBoardPage> {
   GameState? _currentState;
   bool _isRollingDice = false;
   int? _diceResult;
-  SnakesLaddersGame? _gameInstance;
-  String? _lastAnsweredQuestionId; // Track last answered question to prevent re-showing
-  String? _currentQuestionId; // Track currently shown question to prevent duplicate navigation
-  bool _isShowingQuestion = false; // Flag to prevent duplicate navigation
+  String? _lastAnsweredQuestionId;
+  String? _currentQuestionId;
+  bool _isShowingQuestion = false;
 
   @override
   void initState() {
     super.initState();
-    // Force landscape orientation for game board
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -47,11 +45,6 @@ class _GameBoardPageState extends State<GameBoardPage> {
   @override
   void dispose() {
     _pollTimer?.cancel();
-    // Keep landscape orientation (already set in main.dart)
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
     super.dispose();
   }
 
@@ -63,39 +56,25 @@ class _GameBoardPageState extends State<GameBoardPage> {
   }
 
   Future<void> _refreshGameState() async {
-      try {
+    try {
       final state = await _apiService.getState(widget.gameCode);
       if (mounted) {
         setState(() {
           _currentState = state;
         });
 
-        // Update game instance if it exists
-        if (_gameInstance != null) {
-          _gameInstance!.updateGameState(state);
-        }
-
-        // Check if game ended, navigate to about us
+        // Check if game ended
         if (state.ended == true || state.state == 'ended') {
           _pollTimer?.cancel();
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AboutUsPage(),
-              ),
-            );
-          }
+          _showGameEndDialog();
         }
 
-        // Check if there's a question, navigate to question page
-        // Only show if it's a new question (not the one we just answered or currently showing)
+        // Check if there's a question
         if (state.question.isNotEmpty && 
             state.questionid.isNotEmpty &&
             state.questionid != _lastAnsweredQuestionId &&
             state.questionid != _currentQuestionId &&
             !_isShowingQuestion) {
-          // Mark as showing immediately to prevent duplicate navigation
           _currentQuestionId = state.questionid;
           _isShowingQuestion = true;
           _pollTimer?.cancel();
@@ -103,23 +82,20 @@ class _GameBoardPageState extends State<GameBoardPage> {
           if (mounted) {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => QuestionPage(
+              createSlideRoute(
+                QuestionPage(
                   gameCode: widget.gameCode,
                   playerName: widget.playerName,
                   question: state.question.first,
                 ),
               ),
             );
-            // Mark this question as answered and resume polling
             if (mounted) {
               _isShowingQuestion = false;
               if (result == true) {
                 _lastAnsweredQuestionId = state.questionid;
               }
-              // Clear current question ID so we can show new questions
               _currentQuestionId = null;
-              // Refresh state immediately to get updated game state
               await _refreshGameState();
               _startPolling();
             }
@@ -127,11 +103,7 @@ class _GameBoardPageState extends State<GameBoardPage> {
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
+      // Error handling
     }
   }
 
@@ -173,7 +145,6 @@ class _GameBoardPageState extends State<GameBoardPage> {
           _diceResult = state.dice;
         });
 
-        // Refresh state immediately without delay
         await _refreshGameState();
       }
     } catch (e) {
@@ -188,233 +159,495 @@ class _GameBoardPageState extends State<GameBoardPage> {
     }
   }
 
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Exit Game?'),
+          content: const Text('Are you sure you want to leave this game? You can return later using the game code.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacement(
+                  context,
+                  createSlideRoute(const MainMenuPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showGameEndDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,  // Allow dismissing by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Game Ended!'),
+          content: Text(_currentState?.message ?? 'The game has ended.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();  // Just dismiss the dialog
+              },
+              child: const Text('Dismiss'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacement(
+                  context,
+                  createSlideRoute(const MainMenuPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Back to Main Menu'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Calculate position on board for a given square number (1-28)
+  Offset _getBoardPosition(int position, double boardWidth, double boardHeight) {
+    // Board is 7 columns x 4 rows
+    // Row 1 (1-7): left to right at bottom
+    // Row 2 (8-14): right to left, second from bottom
+    // Row 3 (15-21): left to right, second from top
+    // Row 4 (22-28): right to left at top
+    
+    final double cellWidth = boardWidth / 7; // Board width divided by 7 columns
+    final double cellHeight = boardHeight / 4; // Board height divided by 4 rows
+    
+    int row;
+    int col;
+    
+    if (position >= 1 && position <= 7) {
+      // Row 1: positions 1-7, left to right
+      row = 3; // Bottom row
+      col = position - 1;
+    } else if (position >= 8 && position <= 14) {
+      // Row 2: positions 8-14, right to left
+      row = 2;
+      col = 6 - (position - 8);
+    } else if (position >= 15 && position <= 21) {
+      // Row 3: positions 15-21, left to right
+      row = 1;
+      col = position - 15;
+    } else {
+      // Row 4: positions 22-28, right to left
+      row = 0; // Top row
+      col = 6 - (position - 22);
+    }
+    
+    // Center the piece in the cell
+    double x = col * cellWidth + cellWidth / 2 - 15; // 15 is half of piece size
+    double y = row * cellHeight + cellHeight / 2 - 15;
+    
+    return Offset(x, y);
+  }
+
+  // Build player pieces on the board with animation
+  List<Widget> _buildPlayerPieces(double boardWidth, double boardHeight) {
+    if (_currentState == null) return [];
+    
+    return _currentState!.players.map((player) {
+      final position = player.pos;
+      if (position < 1 || position > 28) return const SizedBox.shrink();
+      
+      final offset = _getBoardPosition(position, boardWidth, boardHeight);
+      
+      return AnimatedPositioned(
+        key: ValueKey('player_${player.player}'),
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeInOut,
+        left: offset.dx,
+        top: offset.dy,
+        child: Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white,
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/player ${player.color}.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey,
+                  child: Center(
+                    child: Text(
+                      player.player[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Game: ${widget.gameCode}'),
-        backgroundColor: Colors.blue.shade900,
-        foregroundColor: Colors.white,
+    return Container(
+      width: kGameWidth,
+      height: kGameHeight,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/backgroundsplashscreen.png'),
+          fit: BoxFit.cover,
+        ),
       ),
-      body: _currentState == null
+      child: _currentState == null
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : Stack(
               children: [
-                // Game info section
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  color: Colors.blue.shade50,
-                  child: Column(
-                    children: [
-                      Text(
-                        'Code: ${_currentState!.code}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                // Game board image - centered
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 10,
+                  child: Center(
+                    child: SizedBox(
+                      width: 700,
+                      height: 540,
+                      child: Stack(
+                        children: [
+                          // Board image
+                          Image.asset(
+                            'assets/images/board with snake.png',
+                            fit: BoxFit.contain,
+                            width: 700,
+                            height: 540,
+                          ),
+                          // Player pieces on board
+                          ..._buildPlayerPieces(700, 540),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _currentState!.message,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.blue.shade900,
-                        ),
+                    ),
+                  ),
+                ),
+                
+                // Back button
+                buildBackButton(context, onTap: _showExitConfirmation),
+                
+                // Game Code and Status - Top Center (side by side)
+                Positioned(
+                  top: 20,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      // Player states
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 8,
-                        children: _currentState!.players.map((player) {
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Game Code
+                          const Icon(Icons.vpn_key, color: Colors.blue, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Code: ${_currentState!.code}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Container(
+                            height: 30,
+                            width: 1,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(width: 20),
+                          // Status
+                          Text(
+                            _currentState!.message,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: _currentState!.state == 'waiting' 
+                                  ? Colors.orange.shade700
+                                  : Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Players list - Left side (smaller)
+                Positioned(
+                  top: 100,
+                  left: 15,
+                  child: Container(
+                    width: 130,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Players',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ..._currentState!.players.map((player) {
                           final isCurrentPlayer = player.player == widget.playerName;
                           final isTurn = player.player == _currentState!.turn;
                           return Container(
+                            margin: const EdgeInsets.only(bottom: 6),
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 5,
                             ),
                             decoration: BoxDecoration(
                               color: isTurn
-                                  ? Colors.green.shade200
+                                  ? Colors.green.shade100
                                   : Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(20),
-                              border: isCurrentPlayer
-                                  ? Border.all(color: Colors.blue, width: 2)
-                                  : null,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: isCurrentPlayer ? Colors.blue : Colors.transparent,
+                                width: 1.5,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: _getColorFromName(player.color),
-                                    shape: BoxShape.circle,
-                                  ),
+                                Image.asset(
+                                  'assets/images/player ${player.color}.png',
+                                  width: 18,
+                                  height: 18,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 18,
+                                      height: 18,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.grey,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    );
+                                  },
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${player.player} - ${player.pos}',
-                                  style: TextStyle(
-                                    fontWeight: isCurrentPlayer
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                                if (_currentState!.state == 'waiting')
-                                  const Text(
-                                    ' (waiting)',
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    '${player.player}: ${player.pos}',
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      fontStyle: FontStyle.italic,
+                                      fontWeight: isCurrentPlayer
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      fontSize: 11,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (isTurn)
+                                  const Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.green,
+                                    size: 14,
                                   ),
                               ],
                             ),
                           );
                         }).toList(),
-                      ),
-                      // Start game button if waiting
-                      if (_currentState!.state == 'waiting')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: ElevatedButton(
-                            onPressed: _startGame,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
+                        
+                        // Start game button
+                        if (_currentState!.state == 'waiting')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _startGame,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Start',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
                             ),
-                            child: const Text('Start Game'),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                // Game board
-                Expanded(
-                  child: Stack(
-                    children: [
-                      _currentState == null
-                          ? const Center(child: CircularProgressIndicator())
-                          : GameWidget<SnakesLaddersGame>.controlled(
-                              gameFactory: () {
-                                _gameInstance = SnakesLaddersGame(
-                                  gameCode: widget.gameCode,
-                                  playerName: widget.playerName,
-                                  gameState: _currentState!,
-                                  diceResult: _diceResult,
-                                  isRollingDice: _isRollingDice,
-                                );
-                                return _gameInstance!;
-                              },
-                            ),
-                      // Dice display
-                      if (_diceResult != null)
-                        Positioned(
-                          top: 20,
-                          right: 20,
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
+                
+                // Dice display and Roll button - Right side, centered vertically
+                Positioned(
+                  right: 30,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Dice display - show current dice from state
+                        if (_currentState?.dice != null && _currentState!.dice! > 0)
+                          Container(
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Colors.white.withOpacity(0.95),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 8,
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 6,
                                 ),
                               ],
                             ),
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Dice',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '$_diceResult',
+                            child: Image.asset(
+                              'assets/images/dice ${_currentState!.dice}.png',
+                              width: 60,
+                              height: 60,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Text(
+                                  '${_currentState!.dice}',
                                   style: const TextStyle(
-                                    fontSize: 48,
+                                    fontSize: 32,
                                     fontWeight: FontWeight.bold,
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-                // Roll dice button
-                if (_currentState!.state == 'playing' &&
-                    _currentState!.turn == widget.playerName &&
-                    _currentState!.question.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.blue.shade50,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isRollingDice ? null : _rollDice,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: _isRollingDice
-                            ? const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
+                        
+                        const SizedBox(height: 12),
+                        
+                        // Roll dice button
+                        if (_currentState!.state == 'playing' &&
+                            _currentState!.turn == widget.playerName &&
+                            _currentState!.question.isEmpty)
+                          ElevatedButton(
+                            onPressed: _isRollingDice ? null : _rollDice,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              elevation: 5,
+                            ),
+                            child: _isRollingDice
+                                ? const SizedBox(
+                                    width: 80,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          'Rolling',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : const Text(
+                                    '🎲 Roll',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  SizedBox(width: 12),
-                                  Text('Rolling...'),
-                                ],
-                              )
-                            : const Text(
-                                'Roll Dice',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
+                          ),
+                      ],
                     ),
                   ),
+                ),
               ],
             ),
     );
   }
-
-  Color _getColorFromName(String colorName) {
-    // Temporary colors - TODO: Replace with actual asset images
-    final colorMap = {
-      'color1': Colors.red,
-      'color2': Colors.blue,
-      'color3': Colors.green,
-      'color4': Colors.yellow,
-      'color5': Colors.purple,
-      'color6': Colors.orange,
-      'color7': Colors.pink,
-      'color8': Colors.teal,
-      'color9': Colors.brown,
-    };
-    return colorMap[colorName.toLowerCase()] ?? Colors.grey;
-  }
 }
-

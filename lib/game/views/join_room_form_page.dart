@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/game_api_service.dart';
 import '../utils/ui_widgets.dart';
+import '../utils/animated_widgets.dart';
 import 'game_board_page.dart';
 
 class JoinRoomFormPage extends StatefulWidget {
@@ -121,14 +122,7 @@ class _JoinRoomFormPageState extends State<JoinRoomFormPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'JOIN ROOM',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 19, 128, 218),
-                        ),
-                      ),
+                      buildBoldTitle(text: 'JOIN ROOM'),
                       const SizedBox(height: 30),
                       // Show selected color
                       Image.asset(

@@ -166,3 +166,47 @@ class _FloatingWidgetState extends State<FloatingWidget>
     );
   }
 }
+
+/// Creates a bold title with stroke effect and letter spacing
+/// [text] - The text to display
+/// [fontSize] - Font size (default: 32)
+/// [color] - Main text color
+/// [strokeColor] - Outline/stroke color
+/// [strokeWidth] - Width of the stroke (default: 2)
+/// [letterSpacing] - Letter spacing (default: 3)
+Widget buildBoldTitle({
+  required String text,
+  double fontSize = 32,
+  Color color = const Color.fromARGB(255, 15, 102, 173),
+  Color strokeColor = const Color.fromARGB(255, 19, 128, 218),
+  double strokeWidth = 2,
+  double letterSpacing = 2,
+}) {
+  return Stack(
+    children: [
+      // Stroke/outline effect
+      Text(
+        text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          letterSpacing: letterSpacing,
+          foreground: Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = strokeWidth
+            ..color = strokeColor,
+        ),
+      ),
+      // Filled text on top
+      Text(
+        text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          letterSpacing: letterSpacing,
+          color: color,
+        ),
+      ),
+    ],
+  );
+}

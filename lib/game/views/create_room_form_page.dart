@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/game_api_service.dart';
 import '../utils/ui_widgets.dart';
+import '../utils/animated_widgets.dart';
 import 'game_board_page.dart';
 
 class CreateRoomFormPage extends StatefulWidget {
@@ -120,14 +121,7 @@ class _CreateRoomFormPageState extends State<CreateRoomFormPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'CREATE ROOM',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 19, 128, 218),
-                        ),
-                      ),
+                      buildBoldTitle(text: 'CREATE ROOM'),
                       const SizedBox(height: 30),
                       // Show selected color
                       Image.asset(

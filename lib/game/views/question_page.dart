@@ -197,25 +197,25 @@ class _QuestionPageState extends State<QuestionPage>
                     children: [
                       _buildAnswerButton(
                         'A',
-                        widget.question.a1,
+                        'a1',  // Send 'a1' instead of the full answer text
                         widget.question.a1,
                       ),
                       const SizedBox(height: 8),
                       _buildAnswerButton(
                         'B',
-                        widget.question.a2,
+                        'a2',  // Send 'a2' instead of the full answer text
                         widget.question.a2,
                       ),
                       const SizedBox(height: 8),
                       _buildAnswerButton(
                         'C',
-                        widget.question.a3,
+                        'a3',  // Send 'a3' instead of the full answer text
                         widget.question.a3,
                       ),
                       const SizedBox(height: 8),
                       _buildAnswerButton(
                         'D',
-                        widget.question.a4,
+                        'a4',  // Send 'a4' instead of the full answer text
                         widget.question.a4,
                       ),
                     ],
