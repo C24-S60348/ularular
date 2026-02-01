@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html show document;
 
 /// Game design dimensions
 const double kGameWidth = 1000;
@@ -23,23 +26,116 @@ Widget buildResponsiveGamePage({required Widget child}) {
         final scaledWidth = kGameWidth * scale;
         final scaledHeight = kGameHeight * scale;
 
-        return Center(
-          child: SizedBox(
-            width: scaledWidth,
-            height: scaledHeight,
-            child: FittedBox(
-              fit: BoxFit.contain,
+        return Stack(
+          children: [
+            Center(
               child: SizedBox(
-                width: kGameWidth,
-                height: kGameHeight,
-                child: child,
+                width: scaledWidth,
+                height: scaledHeight,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: SizedBox(
+                    width: kGameWidth,
+                    height: kGameHeight,
+                    child: child,
+                  ),
+                ),
               ),
             ),
-          ),
+            // Fullscreen button
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: _FullscreenButton(),
+            ),
+          ],
         );
       },
     ),
   );
+}
+
+/// Fullscreen toggle button widget
+class _FullscreenButton extends StatefulWidget {
+  @override
+  State<_FullscreenButton> createState() => _FullscreenButtonState();
+}
+
+class _FullscreenButtonState extends State<_FullscreenButton> {
+  bool _isFullscreen = false;
+
+  void _toggleFullscreen() {
+    if (kIsWeb) {
+      // Web-specific fullscreen
+      _toggleWebFullscreen();
+    } else {
+      // Mobile/Desktop fullscreen
+      _toggleMobileFullscreen();
+    }
+  }
+
+  void _toggleWebFullscreen() {
+    if (html.document.fullscreenElement != null) {
+      // Exit fullscreen
+      html.document.exitFullscreen();
+      setState(() {
+        _isFullscreen = false;
+      });
+    } else {
+      // Enter fullscreen
+      html.document.documentElement?.requestFullscreen();
+      setState(() {
+        _isFullscreen = true;
+      });
+    }
+  }
+
+  void _toggleMobileFullscreen() {
+    setState(() {
+      _isFullscreen = !_isFullscreen;
+    });
+
+    if (_isFullscreen) {
+      // Enter fullscreen
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersiveSticky,
+        overlays: [],
+      );
+    } else {
+      // Exit fullscreen
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.edgeToEdge,
+        overlays: SystemUiOverlay.values,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _toggleFullscreen,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Creates a positioned back button at top left
