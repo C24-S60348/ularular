@@ -35,6 +35,7 @@ class _QuestionPageState extends State<QuestionPage> {
   bool _hasSubmitted = false;
   Timer? _pollTimer;
   String? _currentQuestionId;
+  bool _isClosing = false; // Prevent polling from interfering with manual close
 
   @override
   void initState() {
@@ -69,17 +70,23 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   Future<void> _checkQuestionState() async {
+    // Don't poll if we're already closing
+    if (_isClosing) return;
+    
     try {
       final state = await _apiService.getState(widget.gameCode);
       
       // Check if question is still active
       if (state.questionid != _currentQuestionId || state.question.isEmpty) {
         // Question changed or ended, go back after showing result
+        _isClosing = true;
+        _pollTimer?.cancel();
+        
         if (mounted && _hasSubmitted) {
           await Future.delayed(const Duration(milliseconds: 2000));
         }
-        if (mounted) {
-          Navigator.pop(context, _hasSubmitted);
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context, true);
         }
         return;
       }
@@ -134,8 +141,10 @@ class _QuestionPageState extends State<QuestionPage> {
         );
 
         // Wait longer to see the result
+        _isClosing = true;
+        _pollTimer?.cancel();
         await Future.delayed(const Duration(milliseconds: 3000));
-        if (mounted) {
+        if (mounted && Navigator.canPop(context)) {
           Navigator.pop(context, true);
         }
       }
@@ -387,6 +396,7 @@ class _QuestionPageState extends State<QuestionPage> {
     final isSelected = _selectedAnswer == value;
     final isCorrect = _hasSubmitted && _isAnswerCorrect == true && isSelected;
     final isWrong = _hasSubmitted && _isAnswerCorrect == false && isSelected;
+    final isNotAnswerer = widget.playerName != widget.answererName;
     
     // Determine colors based on submission state
     Color backgroundColor;
@@ -417,42 +427,42 @@ class _QuestionPageState extends State<QuestionPage> {
     }
     
     return GestureDetector(
-      onTap: (_isSubmitting || _hasSubmitted)
+      onTap: (_isSubmitting || _hasSubmitted || isNotAnswerer)
           ? null
           : () async {
               setState(() {
                 _selectedAnswer = value;
               });
               
-              // Only send selection if this is the answerer
-              if (widget.playerName == widget.answererName) {
-                await _apiService.selectAnswer(
-                  code: widget.gameCode,
-                  player: widget.playerName,
-                  answer: value,
-                );
-              }
+              // Send selection to server
+              await _apiService.selectAnswer(
+                code: widget.gameCode,
+                player: widget.playerName,
+                answer: value,
+              );
             },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: borderColor,
-            width: (isSelected || isCorrect || isWrong) ? 3 : 1,
+      child: Opacity(
+        opacity: isNotAnswerer && !_hasSubmitted ? 0.9 : 1.0,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: borderColor,
+              width: (isSelected || isCorrect || isWrong) ? 3 : 1,
+            ),
+            boxShadow: [
+              if (isSelected || isCorrect || isWrong)
+                BoxShadow(
+                  color: borderColor.withOpacity(0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+            ],
           ),
-          boxShadow: [
-            if (isSelected || isCorrect || isWrong)
-              BoxShadow(
-                color: borderColor.withOpacity(0.4),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-          ],
-        ),
-        child: Row(
+          child: Row(
           children: [
             // Label circle with check/cross
             Container(
@@ -500,6 +510,7 @@ class _QuestionPageState extends State<QuestionPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

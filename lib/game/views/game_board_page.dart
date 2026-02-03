@@ -92,26 +92,35 @@ class _GameBoardPageState extends State<GameBoardPage> {
               orElse: () => Player(player: state.turn, pos: 0, color: 'blue'),
             );
             
-            final result = await Navigator.push(
-              context,
-              createSlideRoute(
-                QuestionPage(
-                  gameCode: widget.gameCode,
-                  playerName: widget.playerName,
-                  question: state.question.first,
-                  answererName: answerer.player,
-                  answererColor: answerer.color,
+            try {
+              final result = await Navigator.push(
+                context,
+                createSlideRoute(
+                  QuestionPage(
+                    gameCode: widget.gameCode,
+                    playerName: widget.playerName,
+                    question: state.question.first,
+                    answererName: answerer.player,
+                    answererColor: answerer.color,
+                  ),
                 ),
-              ),
-            );
-            if (mounted) {
-              _isShowingQuestion = false;
-              if (result == true) {
-                _lastAnsweredQuestionId = state.questionid;
+              );
+              if (mounted) {
+                _isShowingQuestion = false;
+                // Mark this question as handled regardless of result
+                _lastAnsweredQuestionId = _currentQuestionId;
+                _currentQuestionId = null;
+                await _refreshGameState();
+                _startPolling();
               }
-              _currentQuestionId = null;
-              await _refreshGameState();
-              _startPolling();
+            } catch (e) {
+              // Handle navigation error gracefully
+              if (mounted) {
+                _isShowingQuestion = false;
+                _lastAnsweredQuestionId = _currentQuestionId;
+                _currentQuestionId = null;
+                _startPolling();
+              }
             }
           }
         }
