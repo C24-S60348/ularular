@@ -31,6 +31,8 @@ class _GameBoardPageState extends State<GameBoardPage> {
   String? _lastAnsweredQuestionId;
   String? _currentQuestionId;
   bool _isShowingQuestion = false;
+  bool _isAnimatingMovement = false;
+  bool _gameEndDialogShown = false;
 
   @override
   void initState() {
@@ -59,13 +61,17 @@ class _GameBoardPageState extends State<GameBoardPage> {
     try {
       final state = await _apiService.getState(widget.gameCode);
       if (mounted) {
-        setState(() {
-          _currentState = state;
-        });
+        // Don't update state if we're animating movement
+        if (!_isAnimatingMovement) {
+          setState(() {
+            _currentState = state;
+          });
+        }
 
-        // Check if game ended
-        if (state.ended == true || state.state == 'ended') {
+        // Check if game ended (only show dialog once)
+        if ((state.ended == true || state.state == 'ended') && !_gameEndDialogShown) {
           _pollTimer?.cancel();
+          _gameEndDialogShown = true;
           _showGameEndDialog();
         }
 
@@ -139,23 +145,76 @@ class _GameBoardPageState extends State<GameBoardPage> {
       );
 
       if (mounted) {
+        // Update dice result and current state immediately so dice shows
         setState(() {
-          _currentState = state;
-          _isRollingDice = false;
           _diceResult = state.dice;
+          _currentState = state;
         });
 
-        await _refreshGameState();
+        // Animate step-by-step movement if steps are provided
+        if (state.steps != null && state.steps!.isNotEmpty) {
+          _isAnimatingMovement = true;
+          await _animatePlayerMovement(widget.playerName, state.steps!);
+          _isAnimatingMovement = false;
+        }
+
+        if (mounted) {
+          setState(() {
+            _isRollingDice = false;
+          });
+
+          await _refreshGameState();
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isRollingDice = false;
+          _isAnimatingMovement = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
       }
+    }
+  }
+
+  /// Animate player movement step by step
+  Future<void> _animatePlayerMovement(String playerName, List<int> steps) async {
+    if (_currentState == null) return;
+
+    for (int step in steps) {
+      if (!mounted) break;
+
+      // Update the player's position in the current state
+      setState(() {
+        _currentState = GameState(
+          code: _currentState!.code,
+          state: _currentState!.state,
+          turn: _currentState!.turn,
+          message: _currentState!.message,
+          players: _currentState!.players.map((player) {
+            if (player.player == playerName) {
+              return Player(
+                player: player.player,
+                pos: step,
+                color: player.color,
+              );
+            }
+            return player;
+          }).toList(),
+          question: _currentState!.question,
+          questionid: _currentState!.questionid,
+          dice: _currentState!.dice,
+          beforepos: _currentState!.beforepos,
+          pos: _currentState!.pos,
+          steps: _currentState!.steps,
+          ended: _currentState!.ended,
+        );
+      });
+
+      // Wait for animation to complete before next step
+      await Future.delayed(const Duration(milliseconds: 500));
     }
   }
 
@@ -228,21 +287,31 @@ class _GameBoardPageState extends State<GameBoardPage> {
     );
   }
 
-  // Calculate position on board for a given square number (1-28)
+  // Calculate position on board for a given square number (0-28)
   Offset _getBoardPosition(int position, double boardWidth, double boardHeight) {
     // Board is 7 columns x 4 rows
+    // Position 0: Starting position (below/left of position 1)
     // Row 1 (1-7): left to right at bottom
     // Row 2 (8-14): right to left, second from bottom
     // Row 3 (15-21): left to right, second from top
     // Row 4 (22-28): right to left at top
     
+    // Adjust for board image padding (the actual playable area is smaller)
+    final double topPadding = boardHeight * 0.12; // 12% top padding
+    final double bottomPadding = boardHeight * 0.12; // 12% bottom padding
+    final double playableHeight = boardHeight - topPadding - bottomPadding;
+    
     final double cellWidth = boardWidth / 7; // Board width divided by 7 columns
-    final double cellHeight = boardHeight / 4; // Board height divided by 4 rows
+    final double cellHeight = playableHeight / 4; // Board height divided by 4 rows
     
     int row;
     int col;
     
-    if (position >= 1 && position <= 7) {
+    if (position == 0) {
+      // Starting position: below position 1 (off the board)
+      row = 3; // Bottom row
+      col = -1; // Left of first column
+    } else if (position >= 1 && position <= 7) {
       // Row 1: positions 1-7, left to right
       row = 3; // Bottom row
       col = position - 1;
@@ -260,9 +329,9 @@ class _GameBoardPageState extends State<GameBoardPage> {
       col = 6 - (position - 22);
     }
     
-    // Center the piece in the cell
+    // Center the piece in the cell with padding offset
     double x = col * cellWidth + cellWidth / 2 - 15; // 15 is half of piece size
-    double y = row * cellHeight + cellHeight / 2 - 15;
+    double y = topPadding + row * cellHeight + cellHeight / 2 - 15;
     
     return Offset(x, y);
   }
@@ -273,13 +342,14 @@ class _GameBoardPageState extends State<GameBoardPage> {
     
     return _currentState!.players.map((player) {
       final position = player.pos;
-      if (position < 1 || position > 28) return const SizedBox.shrink();
+      // Show players at position 0 (starting) through 28
+      if (position < 0 || position > 28) return const SizedBox.shrink();
       
       final offset = _getBoardPosition(position, boardWidth, boardHeight);
       
       return AnimatedPositioned(
         key: ValueKey('player_${player.player}'),
-        duration: const Duration(milliseconds: 800),
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
         left: offset.dx,
         top: offset.dy,
