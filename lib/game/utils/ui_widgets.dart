@@ -7,6 +7,49 @@ import 'dart:html' as html show document;
 const double kGameWidth = 1000;
 const double kGameHeight = 600;
 
+/// Global fullscreen state manager
+class FullscreenManager {
+  static final FullscreenManager _instance = FullscreenManager._internal();
+  factory FullscreenManager() => _instance;
+  FullscreenManager._internal();
+
+  final ValueNotifier<bool> isFullscreen = ValueNotifier<bool>(false);
+
+  void toggleFullscreen() {
+    if (kIsWeb) {
+      _toggleWebFullscreen();
+    } else {
+      _toggleMobileFullscreen();
+    }
+  }
+
+  void _toggleWebFullscreen() {
+    if (html.document.fullscreenElement != null) {
+      html.document.exitFullscreen();
+      isFullscreen.value = false;
+    } else {
+      html.document.documentElement?.requestFullscreen();
+      isFullscreen.value = true;
+    }
+  }
+
+  void _toggleMobileFullscreen() {
+    isFullscreen.value = !isFullscreen.value;
+
+    if (isFullscreen.value) {
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersiveSticky,
+        overlays: [],
+      );
+    } else {
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.edgeToEdge,
+        overlays: SystemUiOverlay.values,
+      );
+    }
+  }
+}
+
 /// Wraps a page with responsive scaling and black padding
 /// [child] - The page widget to wrap
 Widget buildResponsiveGamePage({required Widget child}) {
@@ -55,82 +98,138 @@ Widget buildResponsiveGamePage({required Widget child}) {
   );
 }
 
-/// Fullscreen toggle button widget
+/// Fullscreen toggle button widget with global state and smooth appearance
 class _FullscreenButton extends StatefulWidget {
   @override
   State<_FullscreenButton> createState() => _FullscreenButtonState();
 }
 
-class _FullscreenButtonState extends State<_FullscreenButton> {
-  bool _isFullscreen = false;
+class _FullscreenButtonState extends State<_FullscreenButton>
+    with SingleTickerProviderStateMixin {
+  final _fullscreenManager = FullscreenManager();
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
 
-  void _toggleFullscreen() {
-    if (kIsWeb) {
-      // Web-specific fullscreen
-      _toggleWebFullscreen();
-    } else {
-      // Mobile/Desktop fullscreen
-      _toggleMobileFullscreen();
-    }
-  }
-
-  void _toggleWebFullscreen() {
-    if (html.document.fullscreenElement != null) {
-      // Exit fullscreen
-      html.document.exitFullscreen();
-      setState(() {
-        _isFullscreen = false;
-      });
-    } else {
-      // Enter fullscreen
-      html.document.documentElement?.requestFullscreen();
-      setState(() {
-        _isFullscreen = true;
-      });
-    }
-  }
-
-  void _toggleMobileFullscreen() {
-    setState(() {
-      _isFullscreen = !_isFullscreen;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+    
+    // Start fade in after a tiny delay to make it smooth
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _controller.forward();
+      }
     });
+  }
 
-    if (_isFullscreen) {
-      // Enter fullscreen
-      SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.immersiveSticky,
-        overlays: [],
-      );
-    } else {
-      // Exit fullscreen
-      SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.edgeToEdge,
-        overlays: SystemUiOverlay.values,
-      );
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _toggleFullscreen,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: _fullscreenManager.isFullscreen,
+        builder: (context, isFullscreen, child) {
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _fullscreenManager.toggleFullscreen,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Creates a clickable image button with press feedback
+/// [imagePath] - Path to the image asset
+/// [onTap] - Callback when button is tapped
+/// [height] - Height of the button (optional)
+/// [width] - Width of the button (optional)
+Widget buildClickableImageButton({
+  required String imagePath,
+  required VoidCallback onTap,
+  double? height,
+  double? width,
+}) {
+  return _ClickableImageButton(
+    imagePath: imagePath,
+    onTap: onTap,
+    height: height,
+    width: width,
+  );
+}
+
+/// Clickable image button with press feedback
+class _ClickableImageButton extends StatefulWidget {
+  final String imagePath;
+  final VoidCallback onTap;
+  final double? height;
+  final double? width;
+
+  const _ClickableImageButton({
+    required this.imagePath,
+    required this.onTap,
+    this.height,
+    this.width,
+  });
+
+  @override
+  State<_ClickableImageButton> createState() => _ClickableImageButtonState();
+}
+
+class _ClickableImageButtonState extends State<_ClickableImageButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        child: ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            _isPressed ? Colors.white.withOpacity(0.3) : Colors.transparent,
+            BlendMode.srcATop,
           ),
-          child: Icon(
-            _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-            color: Colors.white,
-            size: 28,
+          child: Image.asset(
+            widget.imagePath,
+            height: widget.height,
+            width: widget.width,
+            fit: BoxFit.contain,
           ),
         ),
       ),
@@ -144,15 +243,12 @@ Widget buildBackButton(BuildContext context, {VoidCallback? onTap}) {
   return Positioned(
     top: 20,
     left: 20,
-    child: GestureDetector(
+    child: buildClickableImageButton(
+      imagePath: 'assets/images/back button.png',
       onTap: onTap ?? () {
         Navigator.pop(context);
       },
-      child: Image.asset(
-        'assets/images/back button.png',
-        height: 70,
-        fit: BoxFit.contain,
-      ),
+      height: 70,
     ),
   );
 }
@@ -197,8 +293,10 @@ Route createSlideRoute(Widget page, {SlideDirection direction = SlideDirection.l
         child: child,
       );
     },
-    transitionDuration: const Duration(milliseconds: 500),
-    reverseTransitionDuration: const Duration(milliseconds: 500),
+    transitionDuration: const Duration(milliseconds: 400),
+    reverseTransitionDuration: const Duration(milliseconds: 400),
+    opaque: true,
+    barrierDismissible: false,
   );
 }
 

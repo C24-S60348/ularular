@@ -58,7 +58,8 @@ class ColorSelectionPage extends StatelessWidget {
                   itemCount: playerColors.length,
                   itemBuilder: (context, index) {
                     final colorImage = playerColors[index];
-                    return GestureDetector(
+                    return buildClickableImageButton(
+                      imagePath: 'assets/images/$colorImage',
                       onTap: () {
                         // Extract color name (e.g., "red" from "player red.png")
                         final colorName = colorImage
@@ -88,10 +89,6 @@ class ColorSelectionPage extends StatelessWidget {
                           );
                         }
                       },
-                      child: Image.asset(
-                        'assets/images/$colorImage',
-                        fit: BoxFit.contain,
-                      ),
                     );
                   },
                 ),

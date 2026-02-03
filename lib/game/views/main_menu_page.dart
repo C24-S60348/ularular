@@ -66,18 +66,15 @@ class MainMenuPage extends StatelessWidget {
                   maxScale: 1.15,
                   minScale: 0.9,
                   duration: const Duration(milliseconds: 2000),
-                  child: GestureDetector(
+                  child: buildClickableImageButton(
+                    imagePath: 'assets/images/play text malay.png',
                     onTap: () {
                       Navigator.push(
                         context,
                         createSlideRoute(const GameModeSelectionPage()),
                       );
                     },
-                    child: Image.asset(
-                      'assets/images/play text malay.png',
-                      height: 80,
-                      fit: BoxFit.contain,
-                    ),
+                    height: 80,
                   ),
                 ),
               ),
@@ -86,18 +83,15 @@ class MainMenuPage extends StatelessWidget {
             Positioned(
               bottom: 20,
               right: 20,
-              child: GestureDetector(
+              child: buildClickableImageButton(
+                imagePath: 'assets/images/about us malay.png',
                 onTap: () {
                   Navigator.push(
                     context,
                     createSlideRoute(const AboutUsPage()),
                   );
                 },
-                child: Image.asset(
-                  'assets/images/about us malay.png',
-                  height: 50,
-                  fit: BoxFit.contain,
-                ),
+                height: 50,
               ),
             ),
           ],

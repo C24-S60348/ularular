@@ -26,7 +26,8 @@ class GameModeSelectionPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Create Game Button
-                  GestureDetector(
+                  buildClickableImageButton(
+                    imagePath: 'assets/images/create game button.png',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -37,15 +38,12 @@ class GameModeSelectionPage extends StatelessWidget {
                         ),
                       );
                     },
-                    child: Image.asset(
-                      'assets/images/create game button.png',
-                      height: 100,
-                      fit: BoxFit.contain,
-                    ),
+                    height: 100,
                   ),
                   const SizedBox(height: 40),
                   // Join Game Button
-                  GestureDetector(
+                  buildClickableImageButton(
+                    imagePath: 'assets/images/join game button.png',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -56,11 +54,7 @@ class GameModeSelectionPage extends StatelessWidget {
                         ),
                       );
                     },
-                    child: Image.asset(
-                      'assets/images/join game button.png',
-                      height: 100,
-                      fit: BoxFit.contain,
-                    ),
+                    height: 100,
                   ),
                 ],
               ),
