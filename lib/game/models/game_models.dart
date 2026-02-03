@@ -31,6 +31,8 @@ class GameState {
   final int? pos;
   final List<int>? steps;
   final bool? ended;
+  final String? selectedanswer; // The answer that was selected (a1, a2, a3, or a4)
+  final String? answercorrect; // "true" or "false" or empty
 
   GameState({
     required this.code,
@@ -45,6 +47,8 @@ class GameState {
     this.pos,
     this.steps,
     this.ended,
+    this.selectedanswer,
+    this.answercorrect,
   });
 
   factory GameState.fromJson(Map<String, dynamic> json) {
@@ -73,6 +77,8 @@ class GameState {
               .toList()
           : null,
       ended: json['ended'] ?? false,
+      selectedanswer: json['selectedanswer'],
+      answercorrect: json['answercorrect'],
     );
   }
 }

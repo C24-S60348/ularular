@@ -100,6 +100,24 @@ class GameApiService {
     }
   }
 
+  Future<void> selectAnswer({
+    required String code,
+    required String player,
+    required String answer,
+  }) async {
+    try {
+      final uri = Uri.parse(
+          '$baseUrl/selectanswer?code=${Uri.encodeComponent(code)}&player=${Uri.encodeComponent(player)}&answer=${Uri.encodeComponent(answer)}');
+      final response = await http.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to select answer: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Silently fail - this is just for visual feedback
+    }
+  }
+
   Future<SubmitAnswerResponse> submitAnswer({
     required String code,
     required String player,

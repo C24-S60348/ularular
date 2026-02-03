@@ -86,6 +86,12 @@ class _GameBoardPageState extends State<GameBoardPage> {
           _pollTimer?.cancel();
           
           if (mounted) {
+            // Find the answerer (player whose turn it is)
+            final answerer = state.players.firstWhere(
+              (p) => p.player == state.turn,
+              orElse: () => Player(player: state.turn, pos: 0, color: 'blue'),
+            );
+            
             final result = await Navigator.push(
               context,
               createSlideRoute(
@@ -93,6 +99,8 @@ class _GameBoardPageState extends State<GameBoardPage> {
                   gameCode: widget.gameCode,
                   playerName: widget.playerName,
                   question: state.question.first,
+                  answererName: answerer.player,
+                  answererColor: answerer.color,
                 ),
               ),
             );

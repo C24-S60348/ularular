@@ -31,7 +31,9 @@ def init_ular_db():
             state TEXT,
             questionid TEXT,
             maxbox INTEGER,
-            topic TEXT
+            topic TEXT,
+            selectedanswer TEXT,
+            answercorrect TEXT
         );"""
         af_getdb(dbloc, query, ())
         
