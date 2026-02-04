@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'game_mode_selection_page.dart';
 import 'about_us_page.dart';
+import 'admin_login_page.dart';
 import '../utils/animated_widgets.dart';
 import '../utils/ui_widgets.dart';
 
@@ -92,6 +93,39 @@ class MainMenuPage extends StatelessWidget {
                   );
                 },
                 height: 50,
+              ),
+            ),
+            // Settings button at bottom left
+            Positioned(
+              bottom: 20,
+              left: 20,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    createSlideRoute(const AdminLoginPage()),
+                  );
+                },
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.settings,
+                    size: 30,
+                    color: Colors.blue,
+                  ),
+                ),
               ),
             ),
           ],
