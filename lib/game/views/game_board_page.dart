@@ -61,11 +61,53 @@ class _GameBoardPageState extends State<GameBoardPage> {
     try {
       final state = await _apiService.getState(widget.gameCode);
       if (mounted) {
+        // Check if any OTHER player's position changed (not the current player)
+        // Don't animate if there's a question or already showing question
+        if (_currentState != null && 
+            !_isAnimatingMovement && 
+            !_isShowingQuestion &&
+            state.question.isEmpty) {
+          for (var newPlayer in state.players) {
+            if (newPlayer.player != widget.playerName) {
+              final oldPlayer = _currentState!.players.firstWhere(
+                (p) => p.player == newPlayer.player,
+                orElse: () => Player(player: newPlayer.player, pos: 0, color: newPlayer.color),
+              );
+              
+              // If position changed, animate the movement
+              if (oldPlayer.pos != newPlayer.pos && newPlayer.pos > oldPlayer.pos) {
+                _isAnimatingMovement = true;
+                // Generate steps from old position to new position
+                final steps = List<int>.generate(
+                  newPlayer.pos - oldPlayer.pos + 1,
+                  (i) => oldPlayer.pos + i,
+                ).skip(1).toList(); // Skip the starting position
+                
+                // Update state first to show new positions for other players
+                setState(() {
+                  _currentState = state;
+                });
+                
+                // Animate this player's movement
+                await _animatePlayerMovement(newPlayer.player, steps);
+                _isAnimatingMovement = false;
+                return; // Exit early, will update on next poll
+              }
+            }
+          }
+        }
+        
         // Don't update state if we're animating movement
         if (!_isAnimatingMovement) {
           setState(() {
             _currentState = state;
           });
+        }
+
+        // Reset lastAnsweredQuestionId if there's no question in state
+        // This allows new questions to appear after previous one was cleared
+        if (state.question.isEmpty || state.questionid.isEmpty) {
+          _lastAnsweredQuestionId = null;
         }
 
         // Check if game ended (only show dialog once)
@@ -79,8 +121,8 @@ class _GameBoardPageState extends State<GameBoardPage> {
         if (state.question.isNotEmpty && 
             state.questionid.isNotEmpty &&
             state.questionid != _lastAnsweredQuestionId &&
-            state.questionid != _currentQuestionId &&
-            !_isShowingQuestion) {
+            !_isShowingQuestion &&
+            !_isAnimatingMovement) {
           _currentQuestionId = state.questionid;
           _isShowingQuestion = true;
           _pollTimer?.cancel();
@@ -102,6 +144,7 @@ class _GameBoardPageState extends State<GameBoardPage> {
                     question: state.question.first,
                     answererName: answerer.player,
                     answererColor: answerer.color,
+                    fromGameBoard: true,
                   ),
                 ),
               );

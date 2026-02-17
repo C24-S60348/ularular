@@ -11,6 +11,7 @@ class QuestionPage extends StatefulWidget {
   final Question question;
   final String? answererName; // The player who needs to answer
   final String? answererColor; // The player's color
+  final bool fromGameBoard; // Track if we came from game board
 
   const QuestionPage({
     super.key,
@@ -19,6 +20,7 @@ class QuestionPage extends StatefulWidget {
     required this.question,
     this.answererName,
     this.answererColor,
+    this.fromGameBoard = true,
   });
 
   @override
@@ -79,14 +81,23 @@ class _QuestionPageState extends State<QuestionPage> {
       // Check if question is still active
       if (state.questionid != _currentQuestionId || state.question.isEmpty) {
         // Question changed or ended, go back after showing result
+        if (_isClosing) return; // Already closing, don't pop again
+        
         _isClosing = true;
         _pollTimer?.cancel();
         
         if (mounted && _hasSubmitted) {
           await Future.delayed(const Duration(milliseconds: 2000));
         }
-        if (mounted && Navigator.canPop(context)) {
-          Navigator.pop(context, true);
+        
+        // Only pop if we're still mounted, can pop, and came from game board
+        if (mounted && Navigator.canPop(context) && widget.fromGameBoard) {
+          try {
+            Navigator.pop(context, true);
+          } catch (e) {
+            // Ignore if already popped
+            print('Pop error (safe to ignore): $e');
+          }
         }
         return;
       }
@@ -141,11 +152,19 @@ class _QuestionPageState extends State<QuestionPage> {
         );
 
         // Wait longer to see the result
+        if (_isClosing) return; // Already closing, don't pop again
+        
         _isClosing = true;
         _pollTimer?.cancel();
         await Future.delayed(const Duration(milliseconds: 3000));
-        if (mounted && Navigator.canPop(context)) {
-          Navigator.pop(context, true);
+        
+        if (mounted && Navigator.canPop(context) && widget.fromGameBoard) {
+          try {
+            Navigator.pop(context, true);
+          } catch (e) {
+            // Ignore if already popped
+            print('Pop error (safe to ignore): $e');
+          }
         }
       }
     } catch (e) {
