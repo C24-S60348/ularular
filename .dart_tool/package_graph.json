@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "ularular",
-      "version": "1.0.10+10",
+      "version": "1.0.13+1000003",
       "dependencies": [
         "cupertino_icons",
         "flutter",

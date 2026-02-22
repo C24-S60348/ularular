@@ -1,4 +1,4 @@
-package com.af1productions.ularular2
+package com.af1productions.snakesnake
 
 import io.flutter.embedding.android.FlutterActivity
 

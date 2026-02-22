@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html show document;
+// Conditional import for web-only dart:html
+import 'ui_widgets_web.dart' if (dart.library.io) 'ui_widgets_stub.dart' as web_utils;
 
 /// Game design dimensions
 const double kGameWidth = 1000;
@@ -24,13 +25,7 @@ class FullscreenManager {
   }
 
   void _toggleWebFullscreen() {
-    if (html.document.fullscreenElement != null) {
-      html.document.exitFullscreen();
-      isFullscreen.value = false;
-    } else {
-      html.document.documentElement?.requestFullscreen();
-      isFullscreen.value = true;
-    }
+    web_utils.toggleWebFullscreen(isFullscreen);
   }
 
   void _toggleMobileFullscreen() {
